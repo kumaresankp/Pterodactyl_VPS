@@ -1,31 +1,31 @@
- Pterodactyl Installation Guide on VPS (Error-Free) 
+ Pterodactyl Installation Guide on VPS (Error-Free)  body { font-family: Arial, sans-serif; background: #f7f9fb; color: #333; padding: 20px; } h1, h2, h3 { color: #1e293b; } pre { background: #0f172a; color: #e5e7eb; padding: 15px; overflow-x: auto; border-radius: 6px; } code { color: #38bdf8; } .note { background: #e0f2fe; padding: 10px; border-left: 5px solid #0284c7; margin: 10px 0; } .warn { background: #fff7ed; padding: 10px; border-left: 5px solid #f97316; margin: 10px 0; } .check { background: #ecfeff; padding: 10px; border-left: 5px solid #0ea5e9; margin: 10px 0; }
 
 🚀 Pterodactyl Installation Guide on VPS (Error-Free)
 =====================================================
 
-This guide shows how to install **Pterodactyl Game Server Panel** on a fresh Ubuntu VPS with all common errors fixed.
+This guide helps you install **Pterodactyl Game Server Panel** on a fresh Ubuntu VPS with verification steps and no hidden pitfalls.
 
 * * *
 
 Step 1: Prepare Your VPS
 ------------------------
 
-Update your system and set the correct timezone. This prevents timezone-related PHP and Composer errors.
+Update your system and set the correct timezone.
 
     apt update && apt upgrade -y
     timedatectl set-timezone Asia/Singapore
 
+✔ Verify timezone:
+
+    timedatectl
+
 Step 2: Install Basic Packages
 ------------------------------
 
-These tools are required for downloading and managing software.
-
     apt install -y curl wget unzip git sudo software-properties-common
 
-Step 3: Install PHP 8.2 (Recommended)
--------------------------------------
-
-Pterodactyl works best with PHP 8.2. Avoid PHP 8.4 which causes issues.
+Step 3: Install PHP 8.2
+-----------------------
 
     add-apt-repository ppa:ondrej/php -y
     apt update
@@ -33,20 +33,25 @@ Pterodactyl works best with PHP 8.2. Avoid PHP 8.4 which causes issues.
     systemctl enable php8.2-fpm
     systemctl start php8.2-fpm
 
+✔ Verify PHP:
+
+    php -v
+    systemctl status php8.2-fpm
+
 Step 4: Install MariaDB & Redis
 -------------------------------
-
-Database and caching services required by Pterodactyl.
 
     apt install mariadb-server redis-server -y
     systemctl enable mariadb redis-server
     systemctl start mariadb redis-server
-    mysql_secure_installation
+
+✔ Verify services:
+
+    systemctl status mariadb
+    systemctl status redis-server
 
 Step 5: Create Database
 -----------------------
-
-This database stores all panel data.
 
     mysql -u root -p
 
@@ -59,14 +64,16 @@ This database stores all panel data.
 Step 6: Install NGINX & Remove Apache
 -------------------------------------
 
-Apache causes port 80 conflicts. Use NGINX only.
-
     apt install nginx -y
     systemctl stop apache2
     systemctl disable apache2
     apt remove apache2 -y
     systemctl enable nginx
     systemctl start nginx
+
+✔ Verify NGINX:
+
+    systemctl status nginx
 
 Step 7: Install Pterodactyl Panel
 ---------------------------------
@@ -80,12 +87,14 @@ Step 7: Install Pterodactyl Panel
 Step 8: Install Composer
 ------------------------
 
-Composer installs PHP dependencies.
-
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
     php composer-setup.php
     mv composer.phar /usr/local/bin/composer
     chmod +x /usr/local/bin/composer
+
+✔ Verify Composer:
+
+    composer --version
 
 Step 9: Install Panel Dependencies
 ----------------------------------
@@ -98,10 +107,8 @@ Step 9: Install Panel Dependencies
     php artisan migrate --seed --force
     php artisan p:user:make
 
-Step 10: Fix Permissions (Important)
-------------------------------------
-
-This fixes the "page not loading" issue.
+Step 10: Fix Permissions
+------------------------
 
     chown -R www-data:www-data /var/www/pterodactyl
     chmod -R 755 /var/www/pterodactyl
@@ -124,12 +131,21 @@ Step 11: Configure NGINX
             include fastcgi_params;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         }
+        location ~ /\.ht {
+            deny all;
+        }
     }
 
     ln -s /etc/nginx/sites-available/pterodactyl.conf /etc/nginx/sites-enabled/
     rm /etc/nginx/sites-enabled/default
     nginx -t
     systemctl restart nginx
+
+✔ Open in browser:
+
+    http://YOUR_SERVER_IP
+
+Login to the panel before proceeding further.
 
 Step 12: Install Docker
 -----------------------
@@ -138,6 +154,11 @@ Step 12: Install Docker
     systemctl enable docker
     systemctl start docker
 
+✔ Verify Docker:
+
+    docker --version
+    systemctl status docker
+
 Step 13: Install Wings
 ----------------------
 
@@ -145,7 +166,29 @@ Step 13: Install Wings
     curl -L -o /usr/local/bin/wings https://github.com/pterodactyl/wings/releases/latest/download/wings_linux_amd64
     chmod +x /usr/local/bin/wings
 
-Step 14: Create Wings Service
+✔ Verify Wings binary:
+
+    wings --version
+
+Step 14: Create Node (From Browser)
+-----------------------------------
+
+Open your browser → Login to Pterodactyl Panel → Admin → Nodes → Create Node Fill:
+
+*   FQDN: Your Server IP
+*   Scheme: HTTP
+*   Daemon Port: 8080
+
+Step 15: Connect Wings to Panel
+-------------------------------
+
+On your server, create the config file:
+
+    nano /etc/pterodactyl/config.yml
+
+Save and close after following panel instructions (do not paste raw JSON blindly).
+
+Step 16: Create Wings Service
 -----------------------------
 
     nano /etc/systemd/system/wings.service
@@ -157,6 +200,7 @@ Step 14: Create Wings Service
     
     [Service]
     User=root
+    WorkingDirectory=/etc/pterodactyl
     ExecStart=/usr/local/bin/wings
     Restart=on-failure
     
@@ -167,32 +211,33 @@ Step 14: Create Wings Service
     systemctl enable wings
     systemctl start wings
 
-Step 15: Add Node in Panel
---------------------------
+✔ Verify Wings:
 
-Create a node in the panel and copy the configuration to:
+    systemctl status wings
 
-    nano /etc/pterodactyl/config.yml
+Node should now show as connected in the panel.
 
-Step 16: Add Allocations
-------------------------
+Step 17: Add Allocations (From Browser)
+---------------------------------------
 
-Add IP and ports like **25565** for Minecraft.
+Panel → Node → Allocations Add:
 
-Step 17: Create Game Server
+*   IP: Your Server IP
+*   Ports: 25565-25575
+
+Step 18: Create Game Server
 ---------------------------
 
-Now create your server from panel and start hosting games 🎮
+Panel → Servers → Create Server Select Node, Port, Egg, RAM & Disk Start server 🎮
 
 Common Errors Fixed
 -------------------
 
-*   Composer timezone issue → Fixed by tzdata + timezone
-*   PHP not found → Installed php-cli
-*   NGINX port 80 conflict → Removed Apache
-*   Page not loading → Fixed permissions
-*   Allocation error → Added ports
-*   Wings not starting → Created systemd service
+*   Composer timezone issue → Fixed via timezone setup
+*   NGINX port conflict → Apache removed
+*   Page not loading → Permissions fixed
+*   Wings not connecting → Proper service created
+*   Allocation error → Ports added
 
 Conclusion
 ----------
