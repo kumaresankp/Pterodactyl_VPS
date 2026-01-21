@@ -1,4 +1,4 @@
- Pterodactyl Installation Guide on VPS (Error-Free)  body { font-family: Arial, sans-serif; background: #f7f9fb; color: #333; padding: 20px; } h1, h2, h3 { color: #1e293b; } pre { background: #0f172a; color: #e5e7eb; padding: 15px; overflow-x: auto; border-radius: 6px; } code { color: #38bdf8; } .note { background: #e0f2fe; padding: 10px; border-left: 5px solid #0284c7; margin: 10px 0; } .warn { background: #fff7ed; padding: 10px; border-left: 5px solid #f97316; margin: 10px 0; }
+ Pterodactyl Installation Guide on VPS (Error-Free) 
 
 🚀 Pterodactyl Installation Guide on VPS (Error-Free)
 =====================================================
